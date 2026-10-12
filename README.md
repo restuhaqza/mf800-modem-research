@@ -12,6 +12,15 @@ hotspot app for the *other* end of the link, and a pile of hard-won gotchas.
 
 ---
 
+## ▶️ Watch the explainer
+
+[![MF800 — reverse engineering a locked 4G modem (67-second explainer)](media/preview.gif)](https://github.com/restuhaqza/mf800-modem-research/releases/latest)
+
+*A 67-second explainer — the device, the problem, what we built, and the findings.
+**[▶ Watch in 1080p](https://github.com/restuhaqza/mf800-modem-research/releases/latest)***
+
+---
+
 ## TL;DR — what got built
 
 | Thing | What it does |
