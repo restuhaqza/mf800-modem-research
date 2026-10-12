@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terminal</title>
+  <script src="./js/plugins/jquery.js" type="text/javascript"></script>
+  <script src="./js/auth.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="./js/xterm/xterm.min.css">
+  <script src="./js/xterm/xterm.min.js" type="text/javascript"></script>
+  <script src="./js/xterm/addon-fit.min.js" type="text/javascript"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100%; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f0f4ec; color: #2d3436;
+    }
+    #wrap { margin: 0; padding: 2px 10px 14px; }
+    h2 {
+      margin: 0 0 14px; font-size: 22px; color: #3a5a1e;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    h2 .pill {
+      font-size: 11px; background: #8dc63f; color: #fff; padding: 3px 10px;
+      border-radius: 12px; font-weight: normal;
+    }
+    h2 .pill.off { background: #b7b7b7; }
+    h2 .pill.warn { background: #e0a020; }
+    .card {
+      background: #fff; border-radius: 12px; padding: 14px;
+      box-shadow: 0 2px 10px rgba(60, 90, 30, 0.08); margin-bottom: 14px;
+    }
+    .modebar { display: flex; gap: 6px; margin-bottom: 12px; }
+    .modebar button {
+      padding: 7px 14px; border: 1px solid #dfe8d3; background: #f4f8ee; color: #456;
+      font-size: 12px; border-radius: 8px; cursor: pointer;
+    }
+    .modebar button.active { background: #8dc63f; color: #fff; border-color: #8dc63f; }
+    .modebar .spacer { flex: 1; }
+    .modebar .hint2 { font-size: 11px; color: #8a9780; align-self: center; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-bottom: 12px; }
+    .chips .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #9aa; margin-right: 2px; }
+    .chips button {
+      padding: 6px 12px; border: 1px solid #dfe8d3; background: #f4f8ee; color: #456;
+      font-size: 12px; border-radius: 14px; cursor: pointer; font-family: Menlo, Consolas, monospace;
+      transition: all .15s;
+    }
+    .chips button:hover { background: #8dc63f; color: #fff; border-color: #8dc63f; }
+    .chips button:disabled { opacity: .45; cursor: default; }
+    #termbox {
+      background: #161b16; border-radius: 10px; padding: 8px;
+      height: min(58vh, 520px); min-height: 320px;
+    }
+    #term { height: 100%; }
+    .bar {
+      display: flex; align-items: center; gap: 14px; margin-top: 10px;
+      font-size: 12px; color: #77866b; flex-wrap: wrap;
+    }
+    .bar .cwd { font-family: Menlo, Consolas, monospace; color: #3a5a1e; }
+    .bar .busy { color: #e67e22; display: none; }
+    .bar .hint { margin-left: auto; color: #7c8a70; }
+    .bar button {
+      padding: 4px 12px; border: 1px solid #dfe8d3; background: #f4f8ee; color: #456;
+      font-size: 12px; border-radius: 8px; cursor: pointer;
+    }
+    .modebar label.auto { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #456; cursor: pointer; user-select: none; }
+    .modebar label.auto input { width: auto; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <h2>&gt;_ Terminal <span class="pill" id="modePill">menghubungkan…</span>
+      <span style="font-size:11px;color:#9aa68f;font-weight:normal">v2-pty</span></h2>
+
+    <div class="card">
+      <div class="modebar">
+        <button id="modePty" type="button">Interaktif (PTY)</button>
+        <button id="modeCmd" type="button">Perintah (fallback)</button>
+        <label class="auto" title="Langsung masuk Alpine Linux saat PTY tersambung">
+          <input type="checkbox" id="autoAlpine"> Auto Alpine
+        </label>
+        <span class="spacer"></span>
+        <span class="hint2">PTY = vi/top/REPL sungguhan &middot; fallback = 1 exec per perintah</span>
+      </div>
+
+      <div class="chips" id="chips">
+        <span class="lbl">Quick</span>
+        <button data-cmd="alpine" title="Masuk Alpine Linux (package manager: apk)">Alpine (apk)</button>
+        <button data-cmd="root" title="Shell root (uid 0)">root</button>
+        <button data-cmd="whoami">whoami</button>
+        <button data-cmd="tty">tty</button>
+        <button data-cmd="stty size">stty size</button>
+        <button data-cmd="uname -a">uname -a</button>
+        <button data-cmd="free">free</button>
+        <button data-cmd="modem_at AT+CSQ">AT+CSQ</button>
+        <button data-cmd="ps">ps</button>
+        <button data-cmd="df">df</button>
+        <button data-cmd="netcfg">netcfg</button>
+        <button data-cmd="cat /proc/meminfo">meminfo</button>
+        <button data-cmd="getprop | grep -E 'gsm|radio|net'">getprop net</button>
+        <button data-cmd="logcat -d -t 50" data-timeout="30" data-wait="1">logcat 50</button>
+      </div>
+
+      <div id="termbox"><div id="term"></div></div>
+
+      <div class="bar">
+        <span class="cwd" id="cwdLbl">/</span>
+        <span class="busy" id="busyLbl">&#9203; running&hellip;</span>
+        <button id="clearBtn" type="button">Clear</button>
+        <span class="hint" id="hint">Enter=eksekusi &middot; &uarr;&darr;=riwayat &middot; Ctrl+C=interrupt &middot; Ctrl+L=bersihkan</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var API_BASE = "http://" + location.hostname + ":8080";
+    var WS_BASE = (location.protocol === "https:" ? "wss://" : "ws://") + location.hostname + ":8080";
+
+    var mode = "none";          // "pty" | "oneshot"
+    var ws = null;
+    var wsOpened = false;
+    var wsWanted = false;
+    var cwd = "/";
+    var busy = false;
+    var line = "";
+    var hist = [];
+    var histIdx = -1;
+    var curXhr = null;
+    var term, fitAddon;
+
+    /* ---------- helpers ---------- */
+    function toBytes(s) {
+      if (window.TextEncoder) return new TextEncoder().encode(s);
+      var u = new Uint8Array(s.length);
+      for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 0xff;
+      return u;
+    }
+    function wsSendText(s) {
+      if (ws && ws.readyState === 1) ws.send(s);
+    }
+    function wsSendBytes(s) {
+      if (ws && ws.readyState === 1) ws.send(toBytes(s));
+    }
+    function sendResize() {
+      if (mode === "pty" && ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ resize: [term.cols, term.rows] }));
+      }
+    }
+    function fit() { try { fitAddon.fit(); } catch (e) {} sendResize(); }
+
+    function setPill(text, cls) {
+      var p = document.getElementById("modePill");
+      p.textContent = text;
+      p.className = "pill" + (cls ? " " + cls : "");
+    }
+    function updateModeUI() {
+      document.getElementById("modePty").className = (mode === "pty" ? "active" : "");
+      document.getElementById("modeCmd").className = (mode === "oneshot" ? "active" : "");
+      $("#cwdLbl").toggle(mode === "oneshot");
+      $("#hint").html(mode === "pty"
+        ? "Sesi PTY sungguhan &middot; Ctrl+C=interrupt &middot; resize otomatis"
+        : "Enter=eksekusi &middot; &uarr;&darr;=riwayat &middot; Ctrl+C=batalkan &middot; Ctrl+L=bersihkan");
+    }
+
+    /* ---------- one-shot (fallback) ---------- */
+    function prompt() {
+      term.write("\r\n\x1b[1;36mmf800\x1b[0m:\x1b[1;34m" + cwd + "\x1b[0m$ ");
+    }
+    function redrawLine() {
+      term.write("\r\x1b[K\x1b[1;36mmf800\x1b[0m:\x1b[1;34m" + cwd + "\x1b[0m$ " + line);
+    }
+    function setBusy(b) {
+      busy = b;
+      $("#busyLbl").toggle(b);
+      $("#chips button").prop("disabled", b);
+    }
+    function run(cmd, timeout, wait) {
+      if (busy || mode !== "oneshot") return;
+      cmd = (cmd === undefined ? line : cmd).trim();
+      if (!cmd) { prompt(); return; }
+      hist.push(cmd);
+      histIdx = -1;
+      line = "";
+      setBusy(true);
+      term.write("\r\n");
+      var t = parseInt(timeout, 10) || 15;
+      curXhr = $.ajax({
+        url: API_BASE + "/api/sh",
+        method: "POST",
+        data: { cmd: cmd, cwd: cwd, timeout: t },
+        dataType: "json",
+        timeout: (t + 8) * 1000
+      }).done(function (r) {
+        var out = (r && r.out) ? r.out : "";
+        out = out.replace(/\x1b\[\?(?:1049|1047|47)[hl]/g, "");
+        if (out) term.write(out.replace(/\r?\n/g, "\r\n"));
+        term.write("\x1b[0m\x1b[?25h");
+        if (r && r.rc !== undefined && r.rc !== "0") {
+          term.write("\r\n\x1b[33m[exit " + r.rc + "]\x1b[0m");
+        }
+        if (r && r.cwd) { cwd = r.cwd; $("#cwdLbl").text(cwd); }
+      }).fail(function (xhr, ts) {
+        if (ts === "abort") {
+          term.write("\x1b[90m[dibatalkan lokal; proses di device tetap jalan sampai timeout]\x1b[0m");
+        } else {
+          term.write("\x1b[31m[error: " + (ts === "timeout" ? "request timeout" : "API tak terjangkau") + "]\x1b[0m");
+        }
+      }).always(function () {
+        curXhr = null;
+        setBusy(false);
+        term.write("\x1b[0m\x1b[?25h");
+        prompt();
+        term.scrollToBottom();
+      });
+    }
+
+    var ONESHOT_BANNER = [
+      "\x1b[1;32mMF800 shell\x1b[0m \x1b[90m(user/uid app, bukan root)\x1b[0m",
+      "\x1b[90m1 perintah = 1 exec sh; cwd dipertahankan.\x1b[0m",
+      "\x1b[90mToolbox hilang (awk/sed/head/tail/find/free/...) via BusyBox.\x1b[0m"
+    ];
+    function enterOneShot(note) {
+      mode = "oneshot";
+      closeWs();
+      term.reset();
+      if (note) term.writeln("\x1b[33m" + note + "\x1b[0m");
+      for (var i = 0; i < ONESHOT_BANNER.length; i++) term.writeln(ONESHOT_BANNER[i]);
+      setPill("perintah", "warn");
+      updateModeUI();
+      prompt();
+      term.focus();
+    }
+
+    /* ---------- auto-enter Alpine ---------- */
+    var AUTO_KEY = "mifi_auto_alpine";
+    function autoAlpineOn() {
+      try { var v = localStorage.getItem(AUTO_KEY); return v === null ? true : v === "1"; }
+      catch (e) { return true; }
+    }
+
+    /* ---------- PTY over WebSocket ---------- */
+    function closeWs() {
+      wsWanted = false;
+      if (ws) {
+        try { ws.onclose = null; ws.onerror = null; ws.onmessage = null; } catch (e) {}
+        try { ws.close(); } catch (e) {}
+        ws = null;
+      }
+    }
+    function enterPty() {
+      mode = "pty";
+      closeWs();
+      wsWanted = true;
+      wsOpened = false;
+      term.reset();
+      setPill("menyambung…", "warn");
+      updateModeUI();
+      var url = WS_BASE + "/api/pty?pin=" + encodeURIComponent(mifiPin())
+              + "&cols=" + term.cols + "&rows=" + term.rows;
+      try { ws = new WebSocket(url); } catch (e) { enterOneShot("PTY tak bisa dibuka; pakai mode perintah."); return; }
+      ws.binaryType = "arraybuffer";
+      ws.onopen = function () {
+        wsOpened = true;
+        setPill("PTY", "");
+        term.write("\x1b[90m[sesi PTY aktif]\x1b[0m\r\n");
+        if (autoAlpineOn()) {
+          term.write("\x1b[90mMasuk Alpine Linux otomatis\x1b[0m\r\n");
+        } else {
+          term.write("\x1b[90mKetik \x1b[0malpine\x1b[90m untuk masuk Alpine Linux (apk), atau \x1b[0mroot\x1b[90m untuk shell root.\x1b[0m\r\n");
+        }
+        sendResize();
+        term.focus();
+        if (autoAlpineOn()) { wsSendBytes("alpine\r"); }
+      };
+      ws.onmessage = function (ev) {
+        var d = ev.data;
+        term.write(typeof d === "string" ? d : new Uint8Array(d));
+      };
+      ws.onerror = function () {};
+      ws.onclose = function () {
+        ws = null;
+        if (!wsWanted) return;
+        if (!wsOpened) {
+          enterOneShot("PTY tidak tersedia; beralih ke mode perintah.");
+        } else {
+          setPill("terputus", "off");
+          term.write("\r\n\x1b[33m[sesi PTY berakhir — klik \"Interaktif (PTY)\" untuk menyambung ulang]\x1b[0m\r\n");
+          mode = "none";
+          updateModeUI();
+        }
+      };
+    }
+
+    /* ---------- input routing ---------- */
+    function onData(data) {
+      if (mode === "pty") { wsSendBytes(data); return; }
+      if (mode !== "oneshot") return;
+      if (busy) {
+        if (data === "\x03" && curXhr) { curXhr.abort(); }
+        return;
+      }
+      if (data === "\r") { run(); return; }
+      if (data === "\x7f") {
+        if (line.length > 0) { line = line.slice(0, -1); redrawLine(); }
+        return;
+      }
+      if (data === "\x03") { term.write("^C"); line = ""; prompt(); return; }
+      if (data === "\x0c") { term.clear(); redrawLine(); return; }
+      if (data === "\x1b[A" || data === "\x1b[B") {
+        if (!hist.length) return;
+        if (histIdx === -1) histIdx = hist.length;
+        histIdx += data === "\x1b[A" ? -1 : 1;
+        if (histIdx < 0) histIdx = 0;
+        if (histIdx >= hist.length) { histIdx = -1; line = ""; } else { line = hist[histIdx]; }
+        redrawLine();
+        return;
+      }
+      if (data >= " " || data === "\t") { line += data; term.write(data); }
+    }
+
+    function initTerm() {
+      term = new Terminal({
+        cursorBlink: true,
+        fontSize: 13,
+        fontFamily: "Menlo, Consolas, monospace",
+        theme: {
+          background: "#161b16", foreground: "#d8e4d0",
+          cursor: "#8dc63f", cursorAccent: "#161b16",
+          selectionBackground: "#3a5a1e"
+        },
+        scrollback: 4000
+      });
+      fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(document.getElementById("term"));
+      try { fitAddon.fit(); } catch (e) {}
+      term.onData(onData);
+      term.focus();
+
+      var ro = new ResizeObserver(function () { fit(); });
+      ro.observe(document.getElementById("termbox"));
+      $(window).on("resize", fit);
+    }
+
+    $(function () {
+      $("#chips").on("click", "button", function () {
+        var cmd = $(this).data("cmd");
+        if (mode === "pty") { wsSendBytes(cmd + "\r"); term.focus(); return; }
+        run(cmd, $(this).data("timeout"));
+      });
+      $("#clearBtn").on("click", function () {
+        term.clear();
+        if (mode === "oneshot" && !busy) redrawLine();
+      });
+      $("#modePty").on("click", function () { if (mode !== "pty") enterPty(); });
+      $("#modeCmd").on("click", function () { if (mode !== "oneshot") enterOneShot(); });
+      $("#autoAlpine").prop("checked", autoAlpineOn()).on("change", function () {
+        try { localStorage.setItem(AUTO_KEY, this.checked ? "1" : "0"); } catch (e) {}
+      });
+
+      mifiAuthStart(function () {
+        initTerm();
+        $.get(API_BASE + "/api/pty/info")
+          .done(function (r) {
+            if (r && r.available) { enterPty(); }
+            else { enterOneShot("PTY tidak tersedia di device ini."); }
+          })
+          .fail(function () { enterOneShot("Tak bisa cek dukungan PTY; pakai mode perintah."); });
+      });
+    });
+  </script>
+</body>
+</html>

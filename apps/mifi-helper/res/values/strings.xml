@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mifi Helper</string>
+    <string name="acc_desc">Membaca dialog USSD dari aplikasi phone untuk ditampilkan di web UI modem</string>
+</resources>

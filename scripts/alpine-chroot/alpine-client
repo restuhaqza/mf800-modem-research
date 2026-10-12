@@ -1,0 +1,36 @@
+#!/system/bin/sh
+#
+# alpine — masuk Alpine langsung dari terminal web (tanpa `root` dulu).
+#
+# Berjalan sebagai user app: menyambung ke kanal root PTY (rootd di loopback),
+# lalu menjalankan `alpine` di dalam shell root sehingga kamu langsung berada
+# di Alpine Linux dengan package manager `apk`.
+#
+# Dipasang oleh scripts/alpine-chroot/install.sh ke bin dir mifi-helper
+# (yang ada di PATH terminal).
+#
+BB=/system/bin/busybox
+PORT="${MIFI_ROOT_PORT:-9022}"
+
+if ! $BB nc -z 127.0.0.1 "$PORT" >/dev/null 2>&1; then
+    echo "alpine: kanal root (127.0.0.1:$PORT) tidak aktif." >&2
+    echo "alpine: jalankan scripts/root-shell/install.sh lebih dulu." >&2
+    exit 1
+fi
+
+SIZE="$($BB stty size 2>/dev/null)"
+case "$SIZE" in
+    [0-9]*" "[0-9]*) ROWS="${SIZE%% *}"; COLS="${SIZE##* }" ;;
+    *)               ROWS=24; COLS=80 ;;
+esac
+
+# PTY lokal di-raw agar keystroke langsung ke PTY root (echo dari sisi remote).
+$BB stty raw -echo 2>/dev/null
+
+{
+    $BB printf 'SIZE %s %s\nalpine\n' "$COLS" "$ROWS"
+    $BB cat
+} | $BB nc 127.0.0.1 "$PORT"
+
+$BB stty sane 2>/dev/null
+echo "[alpine] sesi berakhir"

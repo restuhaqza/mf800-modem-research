@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# MF800 research repo — never commit the following
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1. Firmware images & partition dumps  (proprietary OEM + device identity data:
+#    modemst1/2 hold the IMEI, persist holds WiFi creds + MAC addresses)
+*.img
+*.bin
+dumps/
+firmware/
+backup/
+
+# 2. OEM-copyright material (OEM manuals, decompiled APK, extracted OEM web assets)
+USER_Manual_*.pdf
+apps/mifiservice-decompiled/
+slides/orig-extract/
+slides/before-ui/
+
+# 3. Build artifacts & intermediates
+apps/*/out/
+apps/*/obj/
+apps/*/gen/
+scripts/alpine-chroot/.cache/
+*.apk
+*.apk.idsig
+*.dex
+*.class
+*.so
+*.o
+
+# 4. Signing keys (regenerate the debug keystore locally — see README)
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+
+# 5. Secrets / local config
+.env
+.env.*
+*.secret
+.mifi-agent.json
+
+# 6. macOS / editor junk
+.DS_Store
+._*
+*~
+*.swp
+.idea/
+.vscode/
+
+# 7. Local scratch
+node_modules/
+tmp/
+.tmp/
+*.log

@@ -1,0 +1,18 @@
+{
+  "Upload" : "上传",
+  "Upgrade" : "升级",
+  "Firmware update" :"固件升级",
+  "Delete Upgrade package": "删除升级包",
+  "Please follow the steps below:": "请按以下步骤进行操作:",
+  "1. Download the latest firmware.": "1.下载最新版本的固件",
+  "2. Select the downloaded firmware in the [Firmware File] option.": "2.在[固件文件]选项中选择已下载的固件",
+  "3. Click [Upload] to upload the file to the device.": "3.点击[上传]将文件上传到设备",
+  "4. After the upload is completed, click [Upgrade], and the system will upgrade according to the firmware.":"4.上传完成后，点击[升级]，系统会根据固件进行升级。",
+  "The upgrade takes about 3-4 minutes, and the system will restart automatically after the upgrade.": "升级需要大约3-4分钟时间，结束后系统将自动重启。",
+  "5. If you click [Delete Upgrade Package], the system will delete the firmware just uploaded.": "5.如果点击[删除升级包]，则系统会删除刚刚上传的固件。",
+  "Please download APP/APK management device":"请下载APP/APK管理设备",
+  "Product model:":"产品型号：",
+  "Firmware version:":"固件版本：",
+  "Firmware file:":"固件文件："
+  
+}

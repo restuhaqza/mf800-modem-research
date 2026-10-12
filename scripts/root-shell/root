@@ -1,0 +1,34 @@
+#!/system/bin/sh
+#
+# root — open a real root shell in the mifi web terminal.
+#
+# The terminal shell runs as the app uid (untrusted_app) and cannot elevate.
+# A root PTY daemon (rootd) started by init at boot listens on loopback and
+# hands out a real root PTY; this script connects to it.
+#
+# Protocol: send "SIZE <cols> <rows>\n" first, then bridge raw bytes.
+# Important: unset Android's LD_LIBRARY_PATH/LD_PRELOAD only matters for
+# Entware binaries, which rootd's shell already sets up on the root side.
+#
+BB=/system/bin/busybox
+PORT="${MIFI_ROOT_PORT:-9022}"
+
+SIZE="$($BB stty size 2>/dev/null)"
+case "$SIZE" in
+    [0-9]*" "[0-9]*) ROWS="${SIZE%% *}"; COLS="${SIZE##* }" ;;
+    *)               ROWS=24; COLS=80 ;;
+esac
+
+# Local line discipline must be raw so keystrokes reach the remote PTY
+# immediately (the remote PTY does the echo/line editing).
+$BB stty raw -echo 2>/dev/null
+
+{
+    $BB printf 'SIZE %s %s\n' "$COLS" "$ROWS"
+    $BB cat
+} | $BB nc 127.0.0.1 "$PORT"
+RC=$?
+
+$BB stty sane 2>/dev/null
+echo "[rootd] session ended (rc=$RC)"
+exit $RC

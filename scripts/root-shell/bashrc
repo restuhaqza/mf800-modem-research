@@ -1,0 +1,7 @@
+# ~/.bashrc for the root PTY shell (see scripts/root-shell/install.sh)
+export PS1='\[\e[1;32m\]root@mf800\[\e[0m\]:\w# '
+export PATH=/data/local/mifi:/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin:/system/xbin:/system/bin
+export LD_LIBRARY_PATH=/opt/lib:/opt/usr/lib
+export TERMINFO=/opt/share/terminfo
+export LANG=en_US.UTF-8
+alias ls='ls --color=auto'

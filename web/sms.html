@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SMS</title>
+  <script src="./js/plugins/jquery.js" type="text/javascript"></script>
+  <script src="./js/auth.js" type="text/javascript"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100%; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f0f4ec; color: #2d3436;
+    }
+    #wrap { max-width: none; margin: 0; padding: 2px 10px 14px; }
+    h2 {
+      margin: 0 0 14px; font-size: 22px; color: #3a5a1e;
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2 .pill {
+      font-size: 11px; background: #8dc63f; color: #fff; padding: 3px 10px;
+      border-radius: 12px; font-weight: normal;
+    }
+    .card {
+      background: #fff; border-radius: 12px; padding: 16px;
+      box-shadow: 0 2px 10px rgba(60, 90, 30, 0.08); margin-bottom: 16px;
+    }
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .tabs { display: flex; gap: 6px; }
+    .tabs a {
+      padding: 7px 20px; border-radius: 20px; font-size: 13px; cursor: pointer;
+      background: #eef3e7; color: #556; text-decoration: none; transition: all .15s;
+    }
+    .tabs a.active { background: #8dc63f; color: #fff; font-weight: bold; }
+    .tabs a:hover:not(.active) { background: #dfe9d2; }
+    .switch { font-size: 12px; color: #667; display: flex; align-items: center; gap: 5px; }
+    .btn {
+      padding: 8px 20px; background: #8dc63f; color: #fff; border: 0;
+      border-radius: 8px; cursor: pointer; font-size: 13px; transition: background .15s;
+    }
+    .btn:hover { background: #79b02e; }
+    .btn.small { padding: 5px 12px; font-size: 12px; }
+    .btn.ghost { background: #eef3e7; color: #456; }
+    .btn.ghost:hover { background: #dfe9d2; }
+    #status { font-size: 12px; color: #6b7a5e; margin-left: auto; }
+    table.smslist { width: 100%; border-collapse: collapse; }
+    table.smslist th {
+      text-align: left; font-size: 11px; text-transform: uppercase;
+      letter-spacing: .5px; color: #9aa; padding: 8px; border-bottom: 2px solid #eef3e7;
+    }
+    table.smslist td {
+      padding: 9px 8px; font-size: 13px; border-bottom: 1px solid #f2f5ee;
+      word-break: break-word; vertical-align: top;
+    }
+    table.smslist tbody tr { transition: background .1s; }
+    table.smslist tbody tr:hover { background: #f7faf3; }
+    tr.unread td { background: #fdf9e3; }
+    tr.unread .addr::after {
+      content: "new"; font-size: 9px; background: #e67e22; color: #fff;
+      padding: 1px 6px; border-radius: 8px; margin-left: 6px; vertical-align: 1px;
+    }
+    .addr { font-weight: 600; color: #4a6741; }
+    .msg-body { cursor: pointer; color: #556; }
+    .fullmsg {
+      background: #f7faf3; border-left: 3px solid #8dc63f; padding: 10px 12px;
+      border-radius: 0 8px 8px 0; font-size: 13px; white-space: pre-wrap; line-height: 1.5;
+    }
+    .del {
+      color: #c0392b; cursor: pointer; font-weight: bold; opacity: .55;
+      transition: opacity .15s;
+    }
+    .del:hover { opacity: 1; }
+    .meta { color: #9aa; font-size: 11px; }
+    #compose .form-title { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+    #compose .fld {
+      display: block; font-size: 11px; color: #8a9484; text-transform: uppercase;
+      letter-spacing: .5px; margin: 12px 0 5px;
+    }
+    #compose input[type=text], #compose textarea {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid #dde5d2; border-radius: 8px; padding: 11px 12px;
+      font-size: 14px; font-family: inherit; outline: none; transition: border .15s;
+    }
+    #compose input[type=text]:focus, #compose textarea:focus { border-color: #8dc63f; }
+    #compose textarea { height: 96px; resize: vertical; }
+    .compose-actions { margin-top: 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .brand {
+      text-align: center; font-size: 11px; color: #aab; padding: 8px 0 2px;
+    }
+    @media (max-width: 640px) {
+      #wrap { margin: 8px auto; padding: 0 8px; }
+      h2 { font-size: 18px; }
+      .card { padding: 12px; }
+      .toolbar { gap: 6px; }
+      .tabs a { padding: 11px 16px; }
+      .btn.small { padding: 10px 16px; }
+      .switch input[type=checkbox] { width: 18px; height: 18px; }
+
+      /* table -> stacked cards */
+      table.smslist, table.smslist tbody { display: block; }
+      table.smslist thead { display: none; }
+      table.smslist tr { display: block; border-bottom: 1px solid #eef3e7; padding: 8px 2px; }
+      table.smslist td {
+        display: flex; border: none; padding: 3px 4px; font-size: 13px;
+      }
+      table.smslist td::before {
+        content: attr(data-label);
+        font-weight: 600; color: #9aa; flex: 0 0 68px; font-size: 11px;
+        text-transform: uppercase; letter-spacing: .4px; padding-top: 2px;
+      }
+      td.msg-body { cursor: pointer; max-width: none; }
+      td.num { display: none; }
+      td.delcell { justify-content: flex-end; opacity: .8; }
+      tr.smsfull td::before { display: none; }
+      tr.smsfull td { padding: 2px 4px 8px; }
+
+      #compose textarea { width: 100%; }
+      #compose input[type=text] { width: 100%; }
+      #compose input[type=text], #compose textarea { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <h2>✉ SMS <span class="pill" id="countPill">0</span></h2>
+
+  <div class="card" id="compose">
+    <div class="form-title">✏ New SMS</div>
+    <label class="fld" for="toAddr">To</label>
+    <input type="text" id="toAddr" placeholder="Number, e.g. 081234567890">
+    <label class="fld" for="msgBody">Message</label>
+    <textarea id="msgBody" placeholder="Type your message..."></textarea>
+    <div class="compose-actions">
+      <button class="btn" onclick="sendSms()">Send ➤</button>
+      <span id="charCount" class="meta">0 char</span>
+      <span id="sendStatus" class="meta"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="tabs">
+        <a id="tab_inbox" class="active" onclick="switchBox('inbox')">📥 Inbox</a>
+        <a id="tab_sent" onclick="switchBox('sent')">📤 Sent</a>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="autorefresh" checked> auto (5s)
+      </label>
+      <button class="btn small ghost" onclick="loadList()">↻ Refresh</button>
+      <span id="status"></span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0 16px 8px">
+    <table class="smslist">
+      <thead>
+        <tr><th width="34">#</th><th width="130" id="thAddr">From</th><th width="135">Time</th><th>Message</th><th width="40"></th></tr>
+      </thead>
+      <tbody id="smsRows"></tbody>
+    </table>
+  </div>
+
+  <div class="brand">by @restuhaqza</div>
+</div>
+
+<script>
+var API = "http://" + location.hostname + ":8080";
+var box = "inbox";
+var timer = null;
+
+function switchBox(b) {
+  box = b;
+  $("#tab_inbox").toggleClass("active", b === "inbox");
+  $("#tab_sent").toggleClass("active", b === "sent");
+  $("#thAddr").text(b === "inbox" ? "From" : "To");
+  loadList();
+}
+
+function fmtTime(ms) {
+  var d = new Date(Number(ms));
+  function p(n){ return (n < 10 ? "0" : "") + n; }
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) +
+         " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+
+function loadList() {
+  $.getJSON(API + "/api/sms/list?box=" + box + "&limit=200", function(d) {
+    var rows = "";
+    for (var i = 0; i < d.messages.length; i++) {
+      var m = d.messages[i];
+      var body = m.body.length > 90 ? m.body.substring(0, 90) + "… [more]" : m.body;
+      rows += "<tr id='row" + m.id + "'" + (box === "inbox" && !m.read ? " class='unread'" : "") + ">" +
+        "<td class='meta num'>" + (i + 1) + "</td>" +
+        "<td data-label='From'><span class='addr'>" + esc(m.address) + "</span></td>" +
+        "<td class='meta' data-label='Time'>" + fmtTime(m.date) + "</td>" +
+        "<td class='msg-body' data-label='Message' onclick='toggleFull(" + m.id + ")' id='cell" + m.id + "'>" + esc(body) + "</td>" +
+        "<td class='delcell'><span class='del' onclick='delSms(" + m.id + ")'>✕</span></td>" +
+        "</tr>" +
+        "<tr id='full" + m.id + "' class='smsfull' style='display:none'><td colspan='5'><div class='fullmsg'>" +
+        "<b>" + esc(m.address) + "</b> — " + fmtTime(m.date) + "<br><br>" + esc(m.body) + "</div></td></tr>";
+    }
+    if (!d.messages.length) rows = "<tr><td colspan='5' class='meta' style='text-align:center;padding:24px'>No messages yet</td></tr>";
+    $("#smsRows").html(rows);
+    $("#countPill").text(d.count);
+    $("#status").text("updated " + new Date().toLocaleTimeString());
+  }).fail(function() {
+    $("#status").text("⚠ API unreachable — is mifi-helper running?");
+  });
+}
+
+function toggleFull(id) { $("tr#full" + id).toggle(); }
+
+function delSms(id) {
+  if (!confirm("Delete message #" + id + "?")) return;
+  $.post(API + "/api/sms/delete", { id: id, box: box }, function() { loadList(); });
+}
+
+function sendSms() {
+  var to = $("#toAddr").val().trim();
+  var msg = $("#msgBody").val();
+  if (!to || !msg) { alert("Number and message required"); return; }
+  $("#sendStatus").text("sending...");
+  $.post(API + "/api/sms/send", { address: to, body: msg }, function(r) {
+    if (r.sent) {
+      $("#sendStatus").text("sent ✓");
+      $("#msgBody").val("");
+      setTimeout(loadList, 1500);
+    } else { $("#sendStatus").text("failed: " + JSON.stringify(r)); }
+  }).fail(function() { $("#sendStatus").text("API error"); });
+}
+
+function esc(s) { return $("<div>").text(s == null ? "" : String(s)).html(); }
+
+$("#msgBody").on("input", function() {
+  var n = this.value.length;
+  var seg = n === 0 ? 0 : Math.ceil(n / 153);
+  $("#charCount").text(n + " char" + (seg > 1 ? " · ~" + seg + " SMS" : ""));
+});
+
+function startTimer() {
+  if (timer) clearInterval(timer);
+  if ($("#autorefresh").is(":checked")) timer = setInterval(loadList, 5000);
+}
+
+$("#autorefresh").change(startTimer);
+$(function() {
+  mifiAuthStart(function() { loadList(); startTimer(); });
+});
+</script>
+</body>
+</html>

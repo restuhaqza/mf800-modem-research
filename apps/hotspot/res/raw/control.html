@@ -1,0 +1,204 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WiFi Modem — Kontrol</title>
+<style>
+  :root{
+    --green:#8dc63f; --green-dark:#5a9e1f; --ink:#e8f0e4; --muted:#8b9a85;
+    --bg:#0e1512; --card:#16201b; --line:#243026; --danger:#e0776b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:20px;max-width:760px;margin-inline:auto}
+  h1{font-size:22px;margin:0 0 2px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px;margin-bottom:14px}
+  .card h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--green);margin:0 0 12px}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-weight:700;
+    padding:6px 12px;border-radius:999px;background:#243026;margin-bottom:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--danger)}
+  .dot.on{background:var(--green)}
+  .meta{font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);
+    white-space:pre-wrap;word-break:break-word}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{font:inherit;font-weight:600;border:1px solid var(--line);border-radius:10px;
+    padding:11px 16px;background:#1d2a22;color:var(--ink);cursor:pointer}
+  button.primary{background:var(--green);border-color:var(--green);color:#0e1512}
+  button:hover{filter:brightness(1.12)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input,select{width:100%;font:inherit;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line);background:#111a15;color:var(--ink)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  table{width:100%;border-collapse:collapse;font:13px ui-monospace,Menlo,monospace}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  pre{font:11.5px/1.5 ui-monospace,Menlo,monospace;color:#7e8f78;white-space:pre-wrap;
+    max-height:220px;overflow:auto;margin:0}
+  #notice{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    background:#1d2a22;border:1px solid var(--line);border-radius:10px;
+    padding:10px 16px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  #notice.show{opacity:1}
+  #gate{position:fixed;inset:0;background:rgba(6,10,8,.86);display:none;
+    align-items:center;justify-content:center;padding:20px}
+  #gate.show{display:flex}
+  #gate .card{width:100%;max-width:340px;margin:0}
+</style>
+
+<h1>WiFi Modem</h1>
+<div class="sub" id="device">memuat…</div>
+
+<div class="card">
+  <h2>Status</h2>
+  <div class="badge"><span class="dot" id="dot"></span><span id="state">…</span></div>
+  <div class="meta" id="meta"></div>
+  <div class="row">
+    <button class="primary" id="btnOn">Nyalakan</button>
+    <button id="btnOff">Matikan</button>
+    <button id="btnReadSsid">Baca nama WiFi dari HP</button>
+    <button id="btnSet">Buka Setelan di HP</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Konfigurasi</h2>
+  <label>SSID</label><input id="ssid">
+  <label>Password (min. 8 karakter)</label><input id="pass">
+  <div class="grid2">
+    <div><label>Band</label>
+      <select id="band"><option value="auto">Auto</option>
+        <option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select>
+    </div>
+    <div><label>Port API</label><input id="port" inputmode="numeric"></div>
+  </div>
+  <label>PIN API</label><input id="pin">
+  <div class="row">
+    <button class="primary" id="btnSave">Simpan</button>
+    <button id="btnSaveStart">Simpan &amp; Nyalakan</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Kontrol otomatis (tanpa root)</h2>
+  <div class="meta" id="a11y">memuat…</div>
+  <div class="row"><button id="btnA11y">Aktifkan layanan aksesibilitas</button></div>
+</div>
+
+<div class="card">
+  <h2>Perangkat terhubung</h2>
+  <table><thead><tr><th>IP</th><th>MAC</th><th>Nama</th><th>Sumber</th></tr></thead>
+  <tbody id="clients"><tr><td colspan="4" class="meta">—</td></tr></tbody></table>
+</div>
+
+<div class="card">
+  <h2>Log</h2>
+  <pre id="log">—</pre>
+</div>
+
+<div id="notice"></div>
+
+<div id="gate">
+  <div class="card">
+    <h2>Masuk</h2>
+    <label>PIN API</label><input id="gatePin" type="password" value="admin">
+    <div class="row"><button class="primary" id="gateOk">Masuk</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var pin = localStorage.getItem('hotspot_pin') || 'admin';
+  var $ = function(id){ return document.getElementById(id); };
+
+  function notice(msg){
+    var n = $('notice'); n.textContent = msg; n.classList.add('show');
+    clearTimeout(notice._t); notice._t = setTimeout(function(){ n.classList.remove('show'); }, 2600);
+  }
+  function gate(show){ $('gate').classList.toggle('show', show); }
+
+  function api(path, method, body){
+    return fetch(path, {
+      method: method || 'GET',
+      headers: {'X-Auth': pin, 'Content-Type':'application/json'},
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(r){
+      if (r.status === 401){ gate(true); throw new Error('PIN salah'); }
+      return r.json();
+    });
+  }
+
+  function fill(s){
+    $('dot').classList.toggle('on', !!s.enabled);
+    $('state').textContent = s.enabled ? 'Hotspot AKTIF' : 'Hotspot NONAKTIF';
+    $('device').textContent = s.device + ' · ' + s.android + ' · root: ' + (s.root ? 'ya' : 'tidak')
+      + ' · API :' + s.port;
+    $('meta').textContent =
+      'SSID     : ' + (s.ssid || '-') + (s.ssidSystem ? '   (dibaca dari sistem)' : '   (perkiraan app)') + '\n' +
+      (s.ssidSystem && s.ssidApp && s.ssidSystem !== s.ssidApp
+          ? 'ssid app : ' + s.ssidApp + '\n' : '') +
+      (s.hotspotUrl ? 'dari client hotspot : ' + s.hotspotUrl + '\n' : '') +
+      'backend  : ' + s.backend + '\n' +
+      'terverifikasi: ' + (s.verified ? 'ya (dibaca dari sistem)' : 'perkiraan') +
+      (s.error ? '\ncatatan  : ' + s.error : '');
+    var rows = '';
+    (s.clients || []).forEach(function(c){
+      rows += '<tr><td>' + c.ip + '</td><td>' + c.mac + '</td><td>' +
+        (c.name || '-') + '</td><td>' + c.source + '</td></tr>';
+    });
+    $('clients').innerHTML = rows || '<tr><td colspan="4" class="meta">belum ada perangkat</td></tr>';
+    $('a11y').textContent = s.accessibilityConnected
+      ? 'AKTIF — hotspot bisa dinyalakan/dimatikan otomatis'
+      : (s.accessibilityEnabled
+          ? 'Dicentang, tapi layanan belum tersambung'
+          : 'BELUM AKTIF — tombol hotspot hanya akan membuka Setelan tethering');
+  }
+
+  function load(){
+    api('/api/status').then(fill).catch(function(){});
+  }
+  function loadLog(){
+    api('/api/log').then(function(r){ $('log').textContent = r.log || '-'; }).catch(function(){});
+  }
+
+  $('btnOn').onclick = function(){ api('/api/hotspot/start','POST',{}).then(function(){ notice('perintah nyala dikirim'); load(); }).catch(function(e){ notice(e.message); }); };
+  $('btnOff').onclick = function(){ api('/api/hotspot/stop','POST',{}).then(function(){ notice('perintah mati dikirim'); load(); }).catch(function(e){ notice(e.message); }); };
+  $('btnSet').onclick = function(){ api('/api/settings','POST',{}).then(function(){ notice('Setelan dibuka di HP'); }).catch(function(e){ notice(e.message); }); };
+  $('btnReadSsid').onclick = function(){ notice('membaca nama WiFi dari HP…'); api('/api/ssid/read','POST',{}).then(function(r){ notice('SSID: ' + (r.ssid || '-')); load(); }).catch(function(e){ notice(e.message); }); };
+  $('btnA11y').onclick = function(){ api('/api/accessibility/open','POST',{}).then(function(){ notice('Setelan aksesibilitas dibuka di HP — centang WiFi Modem'); }).catch(function(e){ notice(e.message); }); };
+  $('btnSave').onclick = function(){ save(false); };
+  $('btnSaveStart').onclick = function(){ save(true); };
+
+  function save(start){
+    var body = {
+      ssid: $('ssid').value, pass: $('pass').value, band: $('band').value,
+      pin: $('pin').value, port: parseInt($('port').value || '8090', 10)
+    };
+    api('/api/config','POST',body).then(function(){
+      pin = body.pin; localStorage.setItem('hotspot_pin', pin);
+      notice('tersimpan');
+      if (start) return api('/api/hotspot/start','POST',{});
+      if (body.port) return api('/api/status').then(fill);
+    }).catch(function(e){ notice(e.message); });
+  }
+
+  $('gateOk').onclick = function(){
+    pin = $('gatePin').value; localStorage.setItem('hotspot_pin', pin);
+    gate(false); load();
+  };
+
+  // seed konfigurasi dari status saat pertama
+  api('/api/status').then(function(s){
+    fill(s);
+    $('ssid').value = s.ssidApp || s.ssid || '';
+    $('port').value = s.port || 8090;
+    $('pin').value = pin || 'admin';
+    loadLog();
+  }).catch(function(){});
+
+  setInterval(load, 3000);
+  setInterval(loadLog, 6000);
+})();
+</script>

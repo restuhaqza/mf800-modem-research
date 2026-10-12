@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme.DeviceDefault tersedia sejak API 14, jadi aman untuk minSdk 19
+         sekaligus tetap tampil "native" di Android 8/9. -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorAccent">@color/green</item>
+    </style>
+
+    <!--
+      PENTING: style TIDAK BOLEH memuat layout_* (layout_width/height/margin).
+      LayoutInflater mengabaikannya -> "You must supply a layout_width attribute".
+      Parameter layout selalu ditulis inline di elemennya.
+    -->
+    <style name="Card">
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@color/card</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <style name="CardTitle">
+        <item name="android:textColor">@color/green</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.12</item>
+    </style>
+
+    <style name="Field">
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textColorHint">@color/muted</item>
+    </style>
+</resources>

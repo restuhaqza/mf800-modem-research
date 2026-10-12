@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WiFi Modem</string>
+    <string name="subtitle">Hotspot + daftar client</string>
+
+    <string name="state">Status</string>
+    <string name="start">Nyalakan hotspot</string>
+    <string name="stop">Matikan hotspot</string>
+    <string name="open_settings">Buka setelan tethering</string>
+    <string name="read_ssid">Baca nama WiFi dari HP</string>
+
+    <string name="config">Konfigurasi</string>
+    <string name="ssid">SSID hotspot</string>
+    <string name="password">Password (min. 8 karakter)</string>
+    <string name="band">Band</string>
+    <string name="band_auto">Auto</string>
+    <string name="band_24">2.4 GHz</string>
+    <string name="band_5">5 GHz</string>
+    <string name="apply">Simpan konfigurasi</string>
+
+    <string name="web">Kontrol web</string>
+    <string name="pin">PIN API</string>
+    <string name="port">Port</string>
+
+    <string name="clients">Perangkat terhubung</string>
+    <string name="refresh">Muat ulang</string>
+
+    <string name="log">Log</string>
+    <string name="autostart">Nyalakan otomatis saat boot</string>
+
+    <string name="a11y">Kontrol otomatis (aksesibilitas)</string>
+    <string name="a11y_desc">WiFi Modem memakai layanan aksesibilitas untuk membuka Setelan tethering dan mengklik sakelar hotspot secara otomatis, sehingga hotspot bisa dinyalakan/dimatikan tanpa root. Layanan hanya membaca layar Setelan (com.android.settings).</string>
+    <string name="a11y_enable">Aktifkan layanan aksesibilitas</string>
+    <string name="a11y_status_on">AKTIF — hotspot bisa dikontrol otomatis</string>
+    <string name="a11y_status_off">BELUM AKTIF — tombol hanya membuka Setelan</string>
+</resources>

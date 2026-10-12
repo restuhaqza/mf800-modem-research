@@ -1,0 +1,4 @@
+# /etc/profile inside the Alpine chroot
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PS1='alpine:\w# '
+export LANG=C.UTF-8

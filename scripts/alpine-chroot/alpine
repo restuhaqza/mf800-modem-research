@@ -1,0 +1,46 @@
+#!/system/bin/sh
+#
+# alpine — enter the Alpine Linux chroot on the MF800 modem.
+#
+# Inside, `apk` is the package manager:  apk add <pkg> / apk del <pkg> / apk upgrade
+# Must be run as root (i.e. from the `root` shell) because it uses chroot.
+#
+# Everything lives under /data (persistent). The pseudo filesystems are bound
+# into the rootfs on each entry (they do not survive a reboot).
+#
+# Usage:
+#   alpine              # interactive Alpine shell
+#   alpine apk add git  # run one command inside Alpine
+#
+R="${ALPINE_ROOT:-/data/local/alpine}"
+BB=/system/bin/busybox
+
+if [ ! -x "$R/bin/busybox" ]; then
+    echo "alpine: rootfs not found at $R" >&2
+    echo "alpine: run scripts/alpine-chroot/install.sh first" >&2
+    exit 1
+fi
+
+mountpoint() { $BB mount | $BB grep -q "on $1 "; }
+
+# Pseudo filesystems apk/network/tools need (idempotent, lost on reboot).
+mountpoint "$R/proc"    || $BB mount --bind /proc "$R/proc" 2>/dev/null
+mountpoint "$R/sys"     || $BB mount --bind /sys  "$R/sys"  2>/dev/null
+mountpoint "$R/dev"     || $BB mount --bind /dev  "$R/dev"  2>/dev/null
+mountpoint "$R/dev/pts" || $BB mount -t devpts devpts "$R/dev/pts" 2>/dev/null
+
+# DNS: the modem runs dnsmasq on 127.0.0.1; public resolver as fallback.
+if ! $BB grep -q nameserver "$R/etc/resolv.conf" 2>/dev/null; then
+    $BB printf 'nameserver 127.0.0.1\nnameserver 8.8.8.8\n' > "$R/etc/resolv.conf"
+fi
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+if [ "$#" -gt 0 ]; then
+    exec $BB chroot "$R" "$@"
+fi
+
+if [ -x "$R/bin/bash" ]; then
+    exec $BB chroot "$R" /bin/bash -l
+fi
+exec $BB chroot "$R" /bin/sh -l
